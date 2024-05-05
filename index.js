@@ -1,37 +1,47 @@
 class EventBus {
     constructor() {
-        this.listeners = {};
+        this.instance = null;
+        this.subscribers = {};
     }
 
-    // 订阅事件
-    subscribe(eventName, callback) {
-        if (!this.listeners[eventName]) {
-            this.listeners[eventName] = [];
+    static getInstance() {
+        if (this.instance) return this.instance;
+        this.instance = new EventBus();
+        return this.instance;
+    }
+
+    subscribe(type, handler) {
+        if (!this.subscribers[type]) {
+            this.subscribers[type] = [];
         }
-        this.listeners[eventName].push(callback);
+
+        const handlers = this.subscribers[type];
+        handlers.push(handler);
+
+        return () => {
+            const index = handlers.indexOf(handler);
+            if (index > -1) {
+                handlers.splice(index, 1);
+            }
+        };
     }
 
-    // 发布事件
-    publish(eventName, data) {
-        const eventListeners = this.listeners[eventName];
-        if (eventListeners) {
-            eventListeners.forEach(listener => {
-                listener(data);
-            });
+
+    unsubscribe(type, handler) {
+        const handlers = this.subscribers[type];
+        if (Array.isArray(handlers)) {
+            const index = handlers.indexOf(handler);
+            if (index > -1) {
+                handlers.splice(index, 1);
+            }
         }
     }
 
-    // 取消订阅事件
-    unsubscribe(eventName, callback) {
-        const eventListeners = this.listeners[eventName];
-        if (eventListeners) {
-            this.listeners[eventName] = eventListeners.filter(listener => listener !== callback);
+    dispatch(type, ...data) {
+        const handlers = this.subscribers[type];
+        if (Array.isArray(handlers)) {
+            handlers.forEach(handler => handler(...data));
         }
-    }
-
-    // 清除所有订阅
-    clear() {
-        this.listeners = {};
     }
 }
 
